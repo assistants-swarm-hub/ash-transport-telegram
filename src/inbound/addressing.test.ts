@@ -1,4 +1,4 @@
-import type { BotIdentity } from "@assistant-hub-swarm/transport-sdk";
+import type { BotIdentity } from "@assistants-swarm-hub/transport-sdk";
 import type { Message } from "@grammyjs/types";
 import { describe, expect, it } from "vitest";
 

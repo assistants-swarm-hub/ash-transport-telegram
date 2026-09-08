@@ -1,4 +1,4 @@
-import type { PlatformAdapter, PlatformConnection } from "@assistant-hub-swarm/transport-sdk";
+import type { PlatformAdapter, PlatformConnection } from "@assistants-swarm-hub/transport-sdk";
 import { run, sequentialize, type RunnerHandle } from "@grammyjs/runner";
 import type { MessageReactionUpdated } from "@grammyjs/types";
 import { Bot, HttpError, type Context } from "grammy";

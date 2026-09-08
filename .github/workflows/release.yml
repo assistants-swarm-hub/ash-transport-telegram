@@ -1,7 +1,7 @@
 name: Release
 
 # Ships this transport's image to the org's GitHub Container Registry as
-# ghcr.io/<owner>/ahw-transport-telegram, moves :latest, and tags the commit.
+# ghcr.io/<owner>/ash-transport-telegram, moves :latest, and tags the commit.
 #
 # THE GATE IS THE REGISTRY, NOT THE DIFF. A package.json version that changed
 # on this push says nothing about whether anything shipped: a release that
@@ -37,7 +37,7 @@ concurrency:
 # Workflow-level env is the one place `github` context and shell variables
 # meet: every step below gets these both as ${{ env.X }} and as $X.
 env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/ahw-transport-telegram
+  IMAGE: ghcr.io/${{ github.repository_owner }}/ash-transport-telegram
   # The port the image serves on; the smoke test probes it.
   APP_PORT: "3210"
 
@@ -122,7 +122,7 @@ jobs:
           # authenticates the install (that registry wants a token even for a
           # public package).
           registry-url: https://npm.pkg.github.com
-          scope: "@assistant-hub-swarm"
+          scope: "@assistants-swarm-hub"
           cache: npm
       # See the Dockerfile on npm install vs npm ci.
       - run: npm install --no-audit --no-fund

@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { startTransportService } from "@assistant-hub-swarm/transport-sdk";
+import { startTransportService } from "@assistants-swarm-hub/transport-sdk";
 
 import { descriptor } from "./descriptor";
 import { addressing } from "./inbound/addressing";

@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 
-# The Telegram transport for assistant-hub-swarm. One process, one HTTP port, no
+# The Telegram transport for assistants-swarm-hub. One process, one HTTP port, no
 # database, no migrations, no volumes — it registers with a core at boot and
 # reconciles from the desired state the core answers with.
 #
-#   docker build --secret id=npm_token,env=NPM_TOKEN -t ahw-transport-telegram .
+#   docker build --secret id=npm_token,env=NPM_TOKEN -t ash-transport-telegram .
 #
 # The SDK comes from GitHub Packages, whose npm registry wants a token on every
 # request: a public package there is readable by any account, but not

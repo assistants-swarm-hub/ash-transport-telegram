@@ -1,4 +1,4 @@
-import type { TransportDescriptor } from "@assistant-hub-swarm/transport-sdk";
+import type { TransportDescriptor } from "@assistants-swarm-hub/transport-sdk";
 
 /**
  * Who this transport is, as the core learns it at registration: the id every

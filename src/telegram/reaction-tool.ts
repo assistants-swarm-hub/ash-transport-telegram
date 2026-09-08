@@ -4,7 +4,7 @@ import {
   tracedTool,
   turnOf,
   type TransportRuntime,
-} from "@assistant-hub-swarm/transport-sdk";
+} from "@assistants-swarm-hub/transport-sdk";
 import type { ReactionTypeEmoji } from "@grammyjs/types";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";

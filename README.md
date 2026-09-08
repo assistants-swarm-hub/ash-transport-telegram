@@ -1,6 +1,6 @@
-# ahw-transport-telegram
+# ash-transport-telegram
 
-The **Telegram transport** for [assistant-hub-swarm][core]: stateless pollers that
+The **Telegram transport** for [assistants-swarm-hub][core]: stateless pollers that
 register with a running core, forward every update as transport events, perform
 the sends the core asks for, and host Telegram's own actions as MCP tools.
 
@@ -23,7 +23,7 @@ cp .env.example .env     # REDIS_URL, INTERNAL_API_TOKEN, CORE_API_URL, SELF_URL
 npm run dev
 ```
 
-`.npmrc` points the `@assistant-hub-swarm` scope at GitHub Packages, which
+`.npmrc` points the `@assistants-swarm-hub` scope at GitHub Packages, which
 wants a token on every request: a public package there is readable by any
 account, but not anonymously. Put one with `read:packages` in your user-level
 `~/.npmrc`, so it never reaches this repository:
@@ -37,7 +37,7 @@ core's, and no change to the core:
 
 ```yaml
   tg:
-    image: ghcr.io/assistant-hub-swarm/ahw-transport-telegram:1.0.0
+    image: ghcr.io/assistants-swarm-hub/ash-transport-telegram:1.0.0
     depends_on:
       redis: { condition: service_healthy }
     environment:
@@ -100,7 +100,7 @@ Tests sit beside what they cover.
 ## The contract
 
 Everything that crosses the boundary comes from
-[`@assistant-hub-swarm/transport-sdk`][sdk] — the runtime this service is a
+[`@assistants-swarm-hub/transport-sdk`][sdk] — the runtime this service is a
 few hundred lines of platform code on top of, and the zod schemas, Redis
 helpers, token guard, MCP server, trace client and image normalization it is
 built from. The package lives in the org's registry on GitHub Packages,
@@ -128,7 +128,7 @@ restart the service after a change before judging a live check — `tsx watch`
 will not re-run them.
 
 Releases: bump `version` in `package.json`, push to `main`, and the workflow
-verifies, pushes `ghcr.io/assistant-hub-swarm/ahw-transport-telegram` on that
+verifies, pushes `ghcr.io/assistants-swarm-hub/ash-transport-telegram` on that
 version and tags the commit.
 
 ## A note on the comments
@@ -136,8 +136,8 @@ version and tags the commit.
 This code was extracted from the core repository, where it lived as `apps/tg`.
 Comments citing "Phase N", "v1" or a dated decision refer to that history: the
 reasoning still holds, and the record is in
-[assistant-hub-swarm/ahw-core][core].
+[assistants-swarm-hub/ash-core][core].
 
-[core]: https://github.com/assistant-hub-swarm/ahw-core
-[manual]: https://github.com/assistant-hub-swarm/ahw-core/blob/main/docs/development/adding-a-transport.md
-[sdk]: https://github.com/assistant-hub-swarm/ahw-core/blob/main/packages/transport-sdk/README.md
+[core]: https://github.com/assistants-swarm-hub/ash-core
+[manual]: https://github.com/assistants-swarm-hub/ash-core/blob/main/docs/development/adding-a-transport.md
+[sdk]: https://github.com/assistants-swarm-hub/ash-core/blob/main/packages/transport-sdk/README.md

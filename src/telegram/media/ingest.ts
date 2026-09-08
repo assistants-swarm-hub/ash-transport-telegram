@@ -1,4 +1,4 @@
-import { normalizeImageForChat, type TransportMedia } from "@assistant-hub-swarm/transport-sdk";
+import { normalizeImageForChat, type TransportMedia } from "@assistants-swarm-hub/transport-sdk";
 import type { Message } from "@grammyjs/types";
 
 import { detectMessageMedia } from "./detect";
