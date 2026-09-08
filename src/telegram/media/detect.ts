@@ -1,3 +1,4 @@
+import { isDocumentFile } from "@assistants-swarm-hub/transport-sdk";
 import type { Document, Message, Sticker } from "@grammyjs/types";
 
 import type { DetectedMedia, MediaKind } from "./types";
@@ -8,7 +9,7 @@ import type { DetectedMedia, MediaKind } from "./types";
  */
 
 /**
- * Pure detection of vision-capable media on a Telegram message. Decides *what*
+ * Pure detection of readable media on a Telegram message. Decides *what*
  * file to read and how to hint the describer — the actual download and frame
  * extraction live in the server-only modules. Client-safe (only `@grammyjs/types`,
  * which are types).
@@ -17,7 +18,9 @@ import type { DetectedMedia, MediaKind } from "./types";
  * which Telegram delivers as mp4) now points at the **actual media file** so the
  * server can sample frames with ffmpeg. Telegram's single-frame thumbnail is kept
  * as a fallback for when frame extraction is unavailable. Photos, image documents,
- * and static stickers are still decoded directly as still images.
+ * and static stickers are still decoded directly as still images. A document
+ * that is a text-like file (the contract's `isDocumentFile`) is forwarded whole
+ * as a `document`; any other document is not media and is not forwarded.
  */
 
 /** A short describe hint for a sticker: its emoji and pack name when present. */
@@ -34,8 +37,20 @@ function isVideoLikeDocument(document: Document): boolean {
   return mime.startsWith("video/") || mime === "image/gif";
 }
 
+/** The fields every detection carries with a neutral value. */
+const NONE = {
+  isVideo: false,
+  isAudio: false,
+  isDocument: false,
+  filename: null,
+  mimeType: null,
+  fileSize: null,
+  thumbnailFileId: null,
+  durationSec: null,
+} satisfies Omit<DetectedMedia, "kind" | "fileId" | "fileUniqueId" | "visionHint">;
+
 /**
- * The vision-capable media on a message, or null when there is none. Returns the
+ * The readable media on a message, or null when there is none. Returns the
  * concrete `file_id` to read plus, for video/GIF media, the flag + thumbnail +
  * duration the server needs to sample frames.
  */
@@ -45,13 +60,12 @@ export function detectMessageMedia(message: Message): DetectedMedia | null {
   if (message.voice) {
     const voice = message.voice;
     return {
+      ...NONE,
       kind: "voice",
       fileId: voice.file_id,
       fileUniqueId: voice.file_unique_id ?? null,
       visionHint: null,
-      isVideo: false,
       isAudio: true,
-      thumbnailFileId: null,
       durationSec: voice.duration ?? null,
     };
   }
@@ -95,6 +109,26 @@ export function detectMessageMedia(message: Message): DetectedMedia | null {
     });
   }
 
+  // A text-like file travels whole; anything else Telegram calls a document
+  // (a PDF, an archive, a binary) is not media the core can read.
+  if (
+    message.document &&
+    isDocumentFile({ filename: message.document.file_name, mimeType: message.document.mime_type })
+  ) {
+    const doc = message.document;
+    return {
+      ...NONE,
+      kind: "document",
+      fileId: doc.file_id,
+      fileUniqueId: doc.file_unique_id ?? null,
+      visionHint: null,
+      isDocument: true,
+      filename: doc.file_name ?? null,
+      mimeType: doc.mime_type ?? null,
+      fileSize: doc.file_size ?? null,
+    };
+  }
+
   return null;
 }
 
@@ -105,16 +139,7 @@ function image(
   fileUniqueId: string | null,
   visionHint: string | null,
 ): DetectedMedia {
-  return {
-    kind,
-    fileId,
-    fileUniqueId,
-    visionHint,
-    isVideo: false,
-    isAudio: false,
-    thumbnailFileId: null,
-    durationSec: null,
-  };
+  return { ...NONE, kind, fileId, fileUniqueId, visionHint };
 }
 
 /** A video/GIF: the server samples frames from `fileId` (thumbnail as fallback). */
@@ -125,25 +150,25 @@ function video(
   opts: { thumbnailFileId: string | null; durationSec: number | null },
 ): DetectedMedia {
   return {
+    ...NONE,
     kind,
     fileId,
     fileUniqueId,
     visionHint: null,
     isVideo: true,
-    isAudio: false,
     thumbnailFileId: opts.thumbnailFileId,
     durationSec: opts.durationSec,
   };
 }
 
-/** Whether a message carries any readable media (visual or a voice message). */
+/** Whether a message carries any readable media (visual, a voice message, or a document). */
 export function messageHasVisionMedia(message: Message | undefined): boolean {
   return message ? detectMessageMedia(message) !== null : false;
 }
 
 /**
  * The first message in a reply chain (up to `maxDepth`) that carries
- * vision-capable media — so "what is this?" as a reply to an earlier image
+ * readable media — so "what is this?" as a reply to an earlier image
  * resolves to that image.
  */
 export function findReplyMediaMessage(

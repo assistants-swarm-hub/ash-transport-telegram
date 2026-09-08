@@ -11,6 +11,8 @@ export const MEDIA_KINDS = [
   "animation",
   "video",
   "voice",
+  /** A text-like file (CSV, JSON, XLSX, …), forwarded whole for the core to keep. */
+  "document",
 ] as const;
 
 export type MediaKind = (typeof MEDIA_KINDS)[number];
@@ -21,7 +23,7 @@ export interface ImagePayload {
   mimeHint: string;
 }
 
-/** The vision-capable media found on a Telegram message, before download. */
+/** The media found on a Telegram message, before download. */
 export interface DetectedMedia {
   kind: MediaKind;
   /** The concrete file to read (the media itself; frames sampled for video). */
@@ -33,6 +35,13 @@ export interface DetectedMedia {
   isVideo: boolean;
   /** Whether `fileId` is audio (voice) stored as-is and transcribed by the core. */
   isAudio: boolean;
+  /** Whether `fileId` is a document forwarded whole — never decoded, never sampled. */
+  isDocument: boolean;
+  /** The document's own name and mime type, as Telegram reports them. */
+  filename: string | null;
+  mimeType: string | null;
+  /** Telegram's declared size (documents), so an oversize file is never downloaded. */
+  fileSize: number | null;
   /** Telegram's single-frame thumbnail — the fallback when sampling fails. */
   thumbnailFileId: string | null;
   /** Duration in seconds (video/animation/voice), for even frame spacing. */

@@ -99,6 +99,76 @@ describe("createNormalizer", () => {
     });
   });
 
+  it("forwards a text-like document whole, with its name and mime type", async () => {
+    const csv = Buffer.from("title,year\nHeat,1995\n");
+    const withBytes = createNormalizer({
+      download: async () => ({ base64: csv.toString("base64"), mimeHint: "image/jpeg" }),
+    });
+    const inbound = await withBytes(
+      update({
+        text: undefined,
+        caption: "my watchlist",
+        document: {
+          file_id: "doc-1",
+          file_unique_id: "u-doc-1",
+          file_name: "watchlist.csv",
+          mime_type: "text/csv",
+          file_size: csv.length,
+        },
+      }),
+    );
+    expect(inbound?.content).toBe("my watchlist");
+    expect(inbound?.media).toMatchObject({
+      kind: "document",
+      filename: "watchlist.csv",
+      mimeType: "text/csv",
+      frames: [csv.toString("base64")],
+      unavailable: false,
+    });
+  });
+
+  it("reports an oversize document as unavailable without downloading it", async () => {
+    let downloads = 0;
+    const counting = createNormalizer({
+      download: async () => {
+        downloads++;
+        return null;
+      },
+    });
+    const inbound = await counting(
+      update({
+        text: undefined,
+        document: {
+          file_id: "doc-2",
+          file_unique_id: "u-doc-2",
+          file_name: "huge.csv",
+          mime_type: "text/csv",
+          file_size: 11 * 1024 * 1024,
+        },
+      }),
+    );
+    expect(downloads).toBe(0);
+    expect(inbound?.media).toMatchObject({ kind: "document", filename: "huge.csv", unavailable: true });
+  });
+
+  it("forwards no media for a document that is not text-like", async () => {
+    const inbound = await normalize(
+      update({
+        text: undefined,
+        caption: "the paper",
+        document: {
+          file_id: "doc-3",
+          file_unique_id: "u-doc-3",
+          file_name: "paper.pdf",
+          mime_type: "application/pdf",
+          file_size: 1024,
+        },
+      }),
+    );
+    expect(inbound?.content).toBe("the paper");
+    expect(inbound?.media).toBeNull();
+  });
+
   it("skips an update with neither text nor media", async () => {
     expect(await normalize(update({ text: undefined }))).toBeNull();
   });

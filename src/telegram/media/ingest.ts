@@ -1,4 +1,8 @@
-import { normalizeImageForChat, type TransportMedia } from "@assistants-swarm-hub/transport-sdk";
+import {
+  DOCUMENT_MAX_BYTES,
+  normalizeImageForChat,
+  type TransportMedia,
+} from "@assistants-swarm-hub/transport-sdk";
 import type { Message } from "@grammyjs/types";
 
 import { detectMessageMedia } from "./detect";
@@ -10,9 +14,10 @@ import type { DetectedMedia, ImagePayload } from "./types";
  * Media loading — the transport's half of ingestion since the Phase 7
  * de-storing: every incoming media message is downloaded with the
  * connection's token and normalized to bounded JPEG (frames sampled for
- * video/GIF, raw bytes kept for voice); the payload rides the update event
- * and the CORE stores it. Media that cannot be loaded travels as an
- * `unavailable` marker — recorded, never re-attempted, never lost.
+ * video/GIF, raw bytes kept for voice, a document forwarded whole under the
+ * contract's cap); the payload rides the update event and the CORE stores
+ * it. Media that cannot be loaded travels as an `unavailable` marker —
+ * recorded, never re-attempted, never lost.
  */
 
 /** Injectable downloader (tests); the default hits the Telegram file API. */
@@ -24,6 +29,8 @@ export type FileDownloader = (
 interface LoadedMedia {
   images: ImagePayload[];
   audio: { base64: string; mimeHint: string } | null;
+  /** A document's whole file, with the mime type Telegram reported for it. */
+  document: { base64: string; mimeHint: string } | null;
   hint: string | null;
 }
 
@@ -70,7 +77,7 @@ async function loadVideoFrames(
     frames.map((frame) => normalizeImageForChat(frame.toString("base64"))),
   );
   const kind = detected.kind === "animation" ? "animation" : "video";
-  return { images, audio: null, hint: frameSequenceHint(kind, images.length) };
+  return { images, audio: null, document: null, hint: frameSequenceHint(kind, images.length) };
 }
 
 async function loadDetectedMedia(
@@ -84,12 +91,31 @@ async function loadDetectedMedia(
     return {
       images: [],
       audio: { base64: raw.base64, mimeHint: raw.mimeHint },
+      document: null,
       hint: detected.visionHint,
+    };
+  }
+  if (detected.isDocument) {
+    // The contract's cap is checked on Telegram's declared size, so an
+    // oversize file is never pulled into memory; a file with no declared size
+    // is checked after the download instead. Either way the core hears that
+    // the message HAD a document, as an unavailable one.
+    if (detected.fileSize != null && detected.fileSize > DOCUMENT_MAX_BYTES) return null;
+    const raw = await download(token, detected.fileId).catch(() => null);
+    if (!raw) return null;
+    if (Buffer.from(raw.base64, "base64").length > DOCUMENT_MAX_BYTES) return null;
+    return {
+      images: [],
+      audio: null,
+      document: { base64: raw.base64, mimeHint: detected.mimeType ?? "application/octet-stream" },
+      hint: null,
     };
   }
   if (!detected.isVideo) {
     const image = await loadImage(download, token, detected.fileId);
-    return image ? { images: [image], audio: null, hint: detected.visionHint } : null;
+    return image
+      ? { images: [image], audio: null, document: null, hint: detected.visionHint }
+      : null;
   }
   // Video/GIF: sample frames with ffmpeg; on any failure fall back to the
   // Telegram single-frame thumbnail so the media is still recognized.
@@ -99,7 +125,7 @@ async function loadDetectedMedia(
     const thumb = await loadImage(download, token, detected.thumbnailFileId);
     if (thumb) {
       const kind = detected.kind === "animation" ? "animation" : "video";
-      return { images: [thumb], audio: null, hint: frameSequenceHint(kind, 1) };
+      return { images: [thumb], audio: null, document: null, hint: frameSequenceHint(kind, 1) };
     }
   }
   return null;
@@ -126,19 +152,22 @@ export async function loadMessageMedia(params: {
       kind: detected.kind,
       fileId: detected.fileId,
       fileUniqueId: detected.fileUniqueId,
-      mimeType: null,
+      mimeType: detected.mimeType,
+      filename: detected.filename,
       visionHint: detected.visionHint,
       frames: [],
       unavailable: true,
     };
   }
+  const payload = loaded.audio ?? loaded.document;
   return {
     kind: detected.kind,
     fileId: detected.fileId,
     fileUniqueId: detected.fileUniqueId,
-    mimeType: loaded.audio ? loaded.audio.mimeHint : loaded.images[0].mimeHint,
+    mimeType: payload ? payload.mimeHint : loaded.images[0].mimeHint,
+    filename: detected.filename,
     visionHint: loaded.hint,
-    frames: loaded.audio ? [loaded.audio.base64] : loaded.images.map((image) => image.base64),
+    frames: payload ? [payload.base64] : loaded.images.map((image) => image.base64),
     unavailable: false,
   };
 }
