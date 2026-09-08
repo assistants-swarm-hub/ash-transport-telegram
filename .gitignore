@@ -10,3 +10,6 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 npm-debug.log*
+
+# IDE state
+.idea/
