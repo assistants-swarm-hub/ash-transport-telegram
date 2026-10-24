@@ -19,7 +19,6 @@ const TYPING_REFRESH_MS = 4_000;
 export const descriptor: TransportDescriptor = {
   id: "tg",
   name: "Telegram",
-  mcpPath: "/mcp",
   maxMessageLength: MAX_MESSAGE_LENGTH,
   typingRefreshMs: TYPING_REFRESH_MS,
   connectionConfigSchema: [
