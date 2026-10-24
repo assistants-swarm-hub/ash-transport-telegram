@@ -4,12 +4,10 @@ import {
   tracedTool,
   turnOf,
   type TransportRuntime,
+  type TransportToolServer,
 } from "@assistants-swarm-hub/transport-sdk";
 import type { ReactionTypeEmoji } from "@grammyjs/types";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-
-import type { TgUpdate } from "./adapter";
 
 /**
  * Reacting, as Telegram does it.
@@ -55,7 +53,7 @@ const DESCRIPTION =
   "so when something was asked of you, react and still answer. Omit 'emoji' to take your " +
   "reaction back. The message must be one you can see here and not one of your own.";
 
-export function registerReactionTool(server: McpServer, runtime: TransportRuntime<TgUpdate>): void {
+export function registerReactionTool(server: TransportToolServer, runtime: TransportRuntime): void {
   server.registerTool(
     "set_message_reaction",
     {

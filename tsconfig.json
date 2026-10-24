@@ -4,6 +4,10 @@
     "lib": ["esnext"],
     "module": "esnext",
     "moduleResolution": "bundler",
+    // A linked SDK checkout (`npm link`) is a symlink into another tree; its
+    // declarations must resolve zod and the MCP SDK from THIS node_modules, or
+    // the editor sees two copies of each and nothing is assignable to anything.
+    "preserveSymlinks": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
