@@ -5,6 +5,11 @@
   "type": "module",
   "description": "The Telegram transport for assistants-swarm-hub: stateless pollers that register with a core, forward every update as transport events, perform the sends, and host Telegram's actions as MCP tools.",
   "license": "MIT",
+  "keywords": [
+    "assistants-swarm-hub",
+    "transport",
+    "assistants-swarm-hub-transport"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/assistants-swarm-hub/ash-transport-telegram.git"
@@ -12,7 +17,16 @@
   "engines": {
     "node": ">=24.0.0"
   },
+  "exports": {
+    ".": {
+      "import": "./dist/transport.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsup src/transport.ts --format esm --out-dir dist --clean",
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
@@ -31,6 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "tsup": "^8.5.1",
     "tsx": "^4.19.2",
     "typescript": "^5",
     "vitest": "^4.1.10"
